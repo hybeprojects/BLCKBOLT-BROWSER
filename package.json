@@ -38,7 +38,7 @@
       },
       "win": {
         "sign": false,
-        "target": ["nsis", "zip"]
+        "target": ["nsis", "portable", "zip"]
       },
       "linux": {
         "target": ["AppImage", "deb"],
