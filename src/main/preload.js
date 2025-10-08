@@ -14,6 +14,13 @@ contextBridge.exposeInMainWorld('blckboltAPI', {
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
+  },
+  invoke: (channel, data) => {
+    // Tor IPC methods
+    const validInvoke = ['tor-enable', 'tor-disable', 'tor-status', 'tor-test'];
+    if (validInvoke.includes(channel)) {
+      return ipcRenderer.invoke(channel, data);
+    }
   }
 });
 // TODO: Add secure APIs for AdBlocker, Fingerprint
