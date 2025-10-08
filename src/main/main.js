@@ -1,44 +1,13 @@
-// Tor integration
-const torManager = require('../modules/tor/torManager');
-const torChecker = require('../modules/tor/torChecker');
-
-// Enable Tor for a profile
-ipcMain.handle('tor-enable', async (event, { profileId, socksHost = '127.0.0.1', socksPort = 9050 }) => {
-  torManager.setProfileTor(profileId, { enabled: true, socksHost, socksPort });
-  // Optionally apply proxy to session if you have a session object for this profile
-  // await torManager.applyProxyToSession(sessionObj, profileId);
-  return torManager.getProfile(profileId);
-});
-
-// Disable Tor for a profile
-ipcMain.handle('tor-disable', async (event, { profileId }) => {
-  torManager.setProfileTor(profileId, { enabled: false });
-  // Optionally clear proxy for session
-  // await torManager.applyProxyToSession(sessionObj, profileId);
-  return torManager.getProfile(profileId);
-});
-
-// Get Tor status for a profile
-ipcMain.handle('tor-status', async (event, { profileId }) => {
-  const p = torManager.getProfile(profileId);
-  const reachable = await torManager.isSocksReachable(p.socksHost, p.socksPort);
-  return { ...p, reachable };
-});
-
-// Test Tor IP for a profile (calls out via proxied session)
-ipcMain.handle('tor-test', async (event, { sessionId, profileId }) => {
-  // sessionId: Electron session partition name (e.g., 'persist:profileA')
-  const ses = session.fromPartition(sessionId);
-  try {
-    const ip = await torChecker.getPublicIP(ses);
-    return { ip };
-  } catch (e) {
-    return { error: e.message };
-  }
-});
 // Main Electron process for BLCKBOLT-BROWSER
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
+// Tor integration
+const torManager = require('../modules/tor/torManager');
+const torChecker = require('../modules/tor/torChecker');
+// VPN IPC integration (advanced)
+const vpn = require('../modules/network/vpn');
+const proxyAgent = require('../modules/network/proxy-agent');
+
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -67,10 +36,39 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// VPN IPC integration (advanced)
-const vpn = require('../modules/network/vpn');
-const proxyAgent = require('../modules/network/proxy-agent');
+
 let mainWindow = null;
+// Tor IPC handlers (must be after require)
+ipcMain.handle('tor-enable', async (event, { profileId, socksHost = '127.0.0.1', socksPort = 9050 }) => {
+  torManager.setProfileTor(profileId, { enabled: true, socksHost, socksPort });
+  // Optionally apply proxy to session if you have a session object for this profile
+  // await torManager.applyProxyToSession(sessionObj, profileId);
+  return torManager.getProfile(profileId);
+});
+
+ipcMain.handle('tor-disable', async (event, { profileId }) => {
+  torManager.setProfileTor(profileId, { enabled: false });
+  // Optionally clear proxy for session
+  // await torManager.applyProxyToSession(sessionObj, profileId);
+  return torManager.getProfile(profileId);
+});
+
+ipcMain.handle('tor-status', async (event, { profileId }) => {
+  const p = torManager.getProfile(profileId);
+  const reachable = await torManager.isSocksReachable(p.socksHost, p.socksPort);
+  return { ...p, reachable };
+});
+
+ipcMain.handle('tor-test', async (event, { sessionId, profileId }) => {
+  // sessionId: Electron session partition name (e.g., 'persist:profileA')
+  const ses = session.fromPartition(sessionId);
+  try {
+    const ip = await torChecker.getPublicIP(ses);
+    return { ip };
+  } catch (e) {
+    return { error: e.message };
+  }
+});
 
 function getOvpnFile() {
   const fs = require('fs');
