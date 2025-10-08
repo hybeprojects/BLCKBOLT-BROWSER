@@ -37,7 +37,8 @@
         "category": "public.app-category.developer-tools"
       },
       "win": {
-        "target": ["nsis"]
+        "sign": false,
+        "target": ["nsis", "zip"]
       },
       "linux": {
         "target": ["AppImage", "deb"],
