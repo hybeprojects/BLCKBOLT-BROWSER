@@ -1,0 +1,3 @@
+# Placeholder for EasyList URLs
+https://easylist.to/easylist/easylist.txt
+https://easylist.to/easylist/easyprivacy.txt

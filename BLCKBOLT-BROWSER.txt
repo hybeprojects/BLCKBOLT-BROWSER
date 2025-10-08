@@ -1,0 +1,112 @@
+PROJECT: BLCKBOLT-BROWSER  
+TYPE: Advanced Developer Privacy Browser  
+TECH: Electron + Node.js + JavaScript (extendable to TypeScript later)
+
+GOAL:
+Build a cross-platform desktop browser optimized for developer use and privacy protection.  
+Must support modular extensions (VPN routing, ad/tracker blocking, fingerprint customization, and dev tools integration).
+
+––––––––––––––––––––––––––
+CORE REQUIREMENTS
+––––––––––––––––––––––––––
+
+1. *Project Setup*
+   • Initialize a new Electron app with npm.
+   • Create a secure main process (no nodeIntegration in renderer).
+   • Structure folders as:
+     /src
+       /main
+       /renderer
+       /modules
+       /assets
+     /configs
+   • Add build scripts in package.json: start, build, pack.
+
+2. *UI*
+   • Clean developer-style interface:  
+     – URL bar with navigation (Back / Forward / Reload)  
+     – Central webview area (BrowserView)  
+     – Left sidebar with toggles: VPN, Proxy, AdBlock, Fingerprint, DevTools  
+     – Bottom status bar for connection and routing info
+   • Dark theme by default.  
+   • Use Tailwind CSS for styling.
+
+3. *Network + VPN Integration*
+   • Module: /modules/network/vpn.js
+     – Accept OpenVPN .ovpn configuration files.
+     – Allow user to connect/disconnect via GUI toggle.
+     – Display active server and connection status in status bar.
+     – Use child_process to run OpenVPN CLI in background.
+   • Optional: fallback to system proxy routing if OpenVPN not active.
+
+4. *Ad + Tracker Blocking*
+   • Module: /modules/adblocker.js
+     – Implement filter rules using EasyList and EasyPrivacy.
+     – Intercept requests through Electron session.webRequest.
+     – Log number of blocked requests per site.
+
+5. *Custom Fingerprint Control*
+   • Module: /modules/fingerprint.js
+     – Override user agent, screen size, and timezone on per-profile basis.
+     – Option to randomize fingerprints at startup or per-tab.
+     – Use navigator and window overrides via preload script.
+   • Include UI toggle to view and refresh current fingerprint profile.
+
+6. *Developer Features*
+   • Integrate Electron DevTools by default (Ctrl+Shift+I).
+   • Console tab in sidebar for quick logs.
+   • Built-in JSON viewer and response inspector (later phase).
+
+7. *Privacy + Security*
+   • Disable telemetry.
+   • Use isolated storage per profile directory.
+   • Clear cookies/cache on exit (optional setting).
+   • Implement auto-update checks for dependencies.
+
+8. *Config Files*
+   • /configs/settings.json → global preferences
+   • /configs/vpn/ → default OpenVPN configs
+   • /configs/adlists/ → EasyList URLs
+
+9. *Branding*
+   • App name: BLCKBOLT-BROWSER
+   • Window title: “BLCKBOLT BROWSER – Developer Mode”
+   • Icon: lightning bolt inside a shield (placeholder SVG ok)
+
+10. *Scripts*
+   npm start → launches development mode
+   npm run build → packages distributable
+   npm run lint → code lint
+
+––––––––––––––––––––––––––
+INSTRUCTIONS TO AI CODING ASSISTANT
+––––––––––––––––––––––––––
+
+1. Scaffold this entire project.
+2. Create all necessary directories and base files.
+3. Generate Electron boilerplate with BrowserWindow + preload scripts.
+4. Implement the sidebar and toggles in the renderer process.
+5. Add placeholder modules for vpn.js, adblocker.js, fingerprint.js.
+6. Include comments where API keys or system-level permissions will later go.
+7. Ensure build is cross-platform (Windows, macOS, Linux).
+
+At completion:
+• Print the project file tree.
+• Print terminal instructions for running BLCKBOLT-BROWSER.
+
+––––––––––––––––––––––––––
+OPTIONAL FUTURE PHASES
+––––––––––––––––––––––––––
+• WebExtension API support for add-ons.
+• Built-in password manager (local encrypted storage).
+• Sync profiles via self-hosted API.
+• Add auto-updater with electron-updater.
+• Rust or C++ module for low-level network handling (Tauri/CEF port).
+
+––––––––––––––––––––––––––
+PROMPT CLOSING
+––––––––––––––––––––––––––
+Generate clean, modular, and well-commented code for immediate local build and run.  
+Focus on security best practices and developer visibility.
+
+END OF SPEC.
