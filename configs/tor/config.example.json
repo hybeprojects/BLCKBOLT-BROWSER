@@ -1,0 +1,6 @@
+{
+  "enabled": false,
+  "socksHost": "127.0.0.1",
+  "socksPort": 9050,
+  "profileId": "default"
+}

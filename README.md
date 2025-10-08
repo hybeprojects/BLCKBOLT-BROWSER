@@ -65,4 +65,13 @@ npm run lint
 
 ---
 
+## Tor Integration (Opt-in)
+
+- BLCKBOLT supports per-profile Tor routing via a local Tor daemon or container (SOCKS5, 127.0.0.1:9050).
+- All Tor use is strictly opt-in and requires explicit user consent.
+- Legal/Ethical Notice: Tor is for privacy research and legitimate use only. Do not use Tor to commit illegal acts. BLCKBOLT does not guarantee anonymity or security. Read Tor Project documentation and threat models.
+- See `docs/tor-integration.md` for usage, troubleshooting, and legal/ethical guidance.
+
+---
+
 For more, see `BLCKBOLT-BROWSER.txt`.
