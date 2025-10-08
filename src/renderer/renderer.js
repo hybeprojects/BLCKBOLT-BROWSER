@@ -23,4 +23,39 @@ document.getElementById('app').innerHTML = `
     </main>
   </div>
 `;
-// TODO: Add event listeners and webview logic
+
+// VPN toggle logic
+let vpnEnabled = false;
+const vpnToggleBtn = document.getElementById('vpn-toggle');
+const statusBar = document.getElementById('status-bar');
+
+vpnToggleBtn.addEventListener('click', () => {
+  vpnEnabled = !vpnEnabled;
+  if (vpnEnabled) {
+    window.blckboltAPI.send('vpn-connect');
+    vpnToggleBtn.classList.add('bg-green-600');
+    statusBar.textContent = 'Status: VPN Connecting...';
+  } else {
+    window.blckboltAPI.send('vpn-disconnect');
+    vpnToggleBtn.classList.remove('bg-green-600');
+    statusBar.textContent = 'Status: VPN Disconnected';
+  }
+});
+
+// Listen for VPN status updates from main process
+window.blckboltAPI.on('vpn-status', (status) => {
+  if (status === 'connected') {
+    vpnToggleBtn.classList.add('bg-green-600');
+    statusBar.textContent = 'Status: VPN Connected';
+    vpnEnabled = true;
+  } else if (status === 'disconnected') {
+    vpnToggleBtn.classList.remove('bg-green-600');
+    statusBar.textContent = 'Status: VPN Disconnected';
+    vpnEnabled = false;
+  } else if (status === 'error') {
+    vpnToggleBtn.classList.remove('bg-green-600');
+    statusBar.textContent = 'Status: VPN Error';
+    vpnEnabled = false;
+  }
+});
+// ...existing code...

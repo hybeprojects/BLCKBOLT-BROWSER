@@ -2,7 +2,18 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('blckboltAPI', {
-  send: (channel, data) => ipcRenderer.send(channel, data),
-  on: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args))
+  send: (channel, data) => {
+    // Only allow specific channels for security
+    const validChannels = ['vpn-connect', 'vpn-disconnect'];
+    if (validChannels.includes(channel)) {
+      ipcRenderer.send(channel, data);
+    }
+  },
+  on: (channel, func) => {
+    const validChannels = ['vpn-status'];
+    if (validChannels.includes(channel)) {
+      ipcRenderer.on(channel, (event, ...args) => func(...args));
+    }
+  }
 });
-// TODO: Add secure APIs for VPN, AdBlocker, Fingerprint
+// TODO: Add secure APIs for AdBlocker, Fingerprint
