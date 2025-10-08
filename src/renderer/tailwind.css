@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom dark theme classes for BLCKBOLT-BROWSER */
+.dark body {
+	@apply bg-background text-gray-100;
+}
+.dark .sidebar-btn {
+	@apply bg-sidebar text-accent hover:bg-gray-700;
+}
+.dark #status-bar {
+	@apply bg-sidebar text-status;
+}
+.dark #url-bar {
+	@apply bg-gray-700 text-gray-100;
+}
