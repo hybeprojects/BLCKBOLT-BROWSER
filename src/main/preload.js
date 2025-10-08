@@ -10,7 +10,7 @@ contextBridge.exposeInMainWorld('blckboltAPI', {
     }
   },
   on: (channel, func) => {
-    const validChannels = ['vpn-status'];
+    const validChannels = ['vpn-status', 'vpn-log'];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
