@@ -1,32 +1,42 @@
-{
-  "name": "blckbolt-browser",
-  "version": "0.1.0",
-  "description": "BLCKBOLT-BROWSER: Advanced Developer Privacy Browser (Electron)",
-  "main": "src/main/main.js",
-  "scripts": {
-    "start": "electron .",
-    "build": "electron-packager . BLCKBOLT-BROWSER --platform=all --out=dist --overwrite",
-    "pack": "electron-builder",
-    "lint": "eslint src"
-  },
-  "author": "hybeprojects",
-  "license": "MIT",
-  "devDependencies": {
-    "electron": "^29.4.6",
-    "electron-builder": "^26.0.12",
-    "electron-packager": "^17.1.1",
-    "eslint": "^8.56.0",
-    "tailwindcss": "^3.4.3"
-  },
   "build": {
-    "appId": "com.hybeprojects.blckbolt-browser",
-    "productName": "BLCKBOLT-BROWSER",
+    "appId": "com.blckbolt.browser",
+    "productName": "BLCKBOLT Browser",
+    "directories": {
+      "output": "dist"
+    },
     "files": [
+      "dist/**/*",
       "src/**/*",
-      "configs/**/*",
-      "package.json",
-      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-      "!**/node_modules/.bin",
+      "assets/**/*",
+      "main.js",
+      "package.json"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "hybeprojects",
+        "repo": "BLCKBOLT-BROWSER"
+      }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "BLCKBOLT Browser",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "displayLanguageSelector": false,
+      "license": "LICENSE.txt",
+      "include": "build/installer.nsh"
+    },
+    "protocols": [
+      {
+        "name": "BLCKBOLT Protocol",
+        "schemes": ["blckbolt"]
+      }
+    ]
+  }
       "!**/.gitkeep"
     ],
     "directories": {

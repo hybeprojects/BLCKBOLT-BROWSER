@@ -1,6 +1,8 @@
 // Main Electron process for BLCKBOLT-BROWSER
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
+const fs = require('fs');
+
 // Tor integration
 const torManager = require('../modules/tor/torManager');
 const torChecker = require('../modules/tor/torChecker');
@@ -8,13 +10,49 @@ const torChecker = require('../modules/tor/torChecker');
 const vpn = require('../modules/network/vpn');
 const proxyAgent = require('../modules/network/proxy-agent');
 
+let mainWindow = null;
+let splash = null;
+
+// Auto-updater: prefer electron-updater when available
+let updater = null;
+try {
+  updater = require('electron-updater').autoUpdater;
+} catch (e) {
+  try {
+    // fallback to electron's autoUpdater if explicitly required elsewhere
+    updater = require('electron').autoUpdater;
+  } catch (e2) {
+    updater = null;
+  }
+}
+
+function getOvpnFile() {
+  const vpnDir = path.join(__dirname, '../../configs/vpn');
+  if (!fs.existsSync(vpnDir)) return null;
+  const files = fs.readdirSync(vpnDir).filter(f => f.endsWith('.ovpn'));
+  if (files.length === 0) return null;
+  return path.join(vpnDir, files[0]);
+}
 
 function createWindow() {
-  const win = new BrowserWindow({
+  // Splash window
+  splash = new BrowserWindow({
+    width: 400,
+    height: 300,
+    frame: false,
+    alwaysOnTop: true,
+    transparent: true,
+    center: true,
+    resizable: false
+  });
+  splash.loadFile(path.join(__dirname, '..', 'splash.html'));
+
+  // Main window
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     title: 'BLCKBOLT BROWSER – Developer Mode',
-    icon: path.join(__dirname, '../assets/icon.svg'),
+    icon: path.join(__dirname, '..', '..', 'assets', 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -22,34 +60,76 @@ function createWindow() {
       enableRemoteModule: false
     }
   });
-  win.loadFile(path.join(__dirname, '../renderer/index.html'));
+  mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'index.html'));
+
+  // Show main window after a short delay and close splash
+  setTimeout(() => {
+    if (splash && !splash.isDestroyed()) splash.close();
+    if (mainWindow) mainWindow.show();
+  }, 3000);
+
+  // Auto-update check
+  if (updater && updater.checkForUpdatesAndNotify) {
+    try { updater.checkForUpdatesAndNotify(); } catch (e) { console.warn('Updater check failed', e.message); }
+  }
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
-app.whenReady().then(() => {
-  createWindow();
-  app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+// Ensure single instance (needed for protocol handling on Windows)
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, argv) => {
+    // Windows: protocol url is passed in argv
+    const url = argv.find(a => a && a.startsWith && a.startsWith('blckbolt://'));
+    if (url && mainWindow) mainWindow.webContents.send('protocol-url', url);
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
   });
+}
+
+app.on('ready', () => {
+  createWindow();
+  // register protocol handler
+  try { app.setAsDefaultProtocolClient('blckbolt'); } catch (e) { /* ignore */ }
+});
+
+// macOS open-url event
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  console.log('Custom URL opened:', url);
+  if (mainWindow) mainWindow.webContents.send('protocol-url', url);
+});
+
+app.on('activate', function () {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
+// Wire up updater events if available
+if (updater) {
+  updater.on && updater.on('update-downloaded', () => {
+    try { updater.quitAndInstall(); } catch (e) { console.error('quitAndInstall failed', e); }
+  });
+}
 
-let mainWindow = null;
-// Tor IPC handlers (must be after require)
+// Tor IPC handlers
 ipcMain.handle('tor-enable', async (event, { profileId, socksHost = '127.0.0.1', socksPort = 9050 }) => {
   torManager.setProfileTor(profileId, { enabled: true, socksHost, socksPort });
-  // Optionally apply proxy to session if you have a session object for this profile
-  // await torManager.applyProxyToSession(sessionObj, profileId);
   return torManager.getProfile(profileId);
 });
 
 ipcMain.handle('tor-disable', async (event, { profileId }) => {
   torManager.setProfileTor(profileId, { enabled: false });
-  // Optionally clear proxy for session
-  // await torManager.applyProxyToSession(sessionObj, profileId);
   return torManager.getProfile(profileId);
 });
 
@@ -60,7 +140,6 @@ ipcMain.handle('tor-status', async (event, { profileId }) => {
 });
 
 ipcMain.handle('tor-test', async (event, { sessionId, profileId }) => {
-  // sessionId: Electron session partition name (e.g., 'persist:profileA')
   const ses = session.fromPartition(sessionId);
   try {
     const ip = await torChecker.getPublicIP(ses);
@@ -70,19 +149,7 @@ ipcMain.handle('tor-test', async (event, { sessionId, profileId }) => {
   }
 });
 
-function getOvpnFile() {
-  const fs = require('fs');
-  const vpnDir = path.join(__dirname, '../../configs/vpn');
-  const files = fs.readdirSync(vpnDir).filter(f => f.endsWith('.ovpn'));
-  if (files.length === 0) return null;
-  return path.join(vpnDir, files[0]);
-}
-
-app.whenReady().then(() => {
-  mainWindow = BrowserWindow.getAllWindows()[0];
-  // ...existing code...
-});
-
+// VPN IPC
 ipcMain.on('vpn-connect', (event, opts = {}) => {
   const configPath = getOvpnFile();
   if (!configPath) {
