@@ -44,5 +44,52 @@
         "target": ["AppImage", "deb"],
         "category": "Development"
       }
-    }
+    }{
+  "name": "blckbolt-browser",
+  "version": "0.1.0",
+  "description": "BLCKBOLT-BROWSER: Advanced Developer Privacy Browser (Electron)",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-packager . BLCKBOLT-BROWSER --platform=all --out=dist --overwrite",
+    "pack": "electron-builder",
+    "lint": "eslint src"
+  },
+  "author": "hybeprojects",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^29.4.6",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.1",
+    "eslint": "^8.56.0",
+    "tailwindcss": "^3.4.3"
+    },
+    "build": {
+  "appId": "com.hybeprojects.blckbolt-browser",
+  "productName": "BLCKBOLT-BROWSER",
+  "files": [
+    "src/**/*",
+    "configs/**/*",
+    "package.json",
+    "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+    "!**/node_modules/.bin",
+    "!**/.gitkeep"
+  ],
+  "directories": {
+    "buildResources": "assets",
+    "output": "dist"
+  },
+  "mac": {
+    "category": "public.app-category.developer-tools"
+  },
+  "win": {
+    "target": ["nsis", "portable", "zip"],
+    "icon": "assets/icon.ico"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "category": "Development"
+  },
+  "cscLink": "C:\\Users\\Owner\\Desktop\\blckbolt.pfx",
+  "cscKeyPassword": "1234"
 }
