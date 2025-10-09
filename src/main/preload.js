@@ -23,4 +23,10 @@ contextBridge.exposeInMainWorld('blckboltAPI', {
     }
   }
 });
+// Expose a specific API to listen for protocol URLs in a safe way
+contextBridge.exposeInMainWorld('blckboltProtocol', {
+  onProtocolUrl: (fn) => {
+    ipcRenderer.on('protocol-url', (event, url) => fn(url));
+  }
+});
 // TODO: Add secure APIs for AdBlocker, Fingerprint
