@@ -3,14 +3,19 @@ module.exports = {
   darkMode: 'class',
   content: [
     './src/renderer/**/*.{html,js}',
+    './renderer/**/*.{js,jsx,ts,tsx,html}',
   ],
   theme: {
     extend: {
       colors: {
-        background: '#18181b',
-        sidebar: '#27272a',
-        accent: '#22d3ee',
-        status: '#0ea5e9',
+        background: '#0f0f0f',
+        sidebar: '#1a1a1a',
+        primary: '#6b21a8',
+        accent: '#2563eb',
+        bgDark: '#0f0f0f'
+      },
+      fontFamily: {
+        orbitron: ['Orbitron', 'sans-serif']
       },
     },
   },
