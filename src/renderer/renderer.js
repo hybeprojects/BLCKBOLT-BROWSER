@@ -1,1 +1,0 @@
-vpnToggleBtn.addEventListener('click', () => {

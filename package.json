@@ -2,22 +2,35 @@
   "name": "blckbolt-browser",
   "version": "0.1.0",
   "description": "BLCKBOLT-BROWSER: Advanced Developer Privacy Browser (Electron)",
-  "main": "src/main/main.js",
+  "main": "main/main.js",
   "scripts": {
+    "dev": "next dev renderer",
+    "build:renderer": "next build renderer",
     "start": "electron .",
-    "build": "electron-packager . BLCKBOLT-BROWSER --platform=all --out=dist --overwrite",
-    "pack": "electron-builder",
-    "lint": "eslint src"
+    "build": "npm run build:renderer && electron-builder",
+    "lint": "eslint main renderer",
+    "typecheck": "cd renderer && tsc --noEmit"
   },
   "author": "hybeprojects",
   "license": "MIT",
+  "dependencies": {
+    "next": "14.2.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "framer-motion": "^11.2.2",
+    "tailwindcss": "^3.4.10",
+    "electron-updater": "^6.1.7",
+    "socks-proxy-agent": "^8.0.3"
+  },
   "devDependencies": {
     "electron": "^29.4.6",
     "electron-builder": "^24.13.3",
-    "electron-packager": "^17.1.1",
     "eslint": "^8.56.0",
-    "tailwindcss": "^3.4.3",
-    "electron-updater": "^4.6.5"
+    "typescript": "^5.5.4",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.2",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39"
   },
   "build": {
     "appId": "com.blckbolt.browser",
@@ -27,9 +40,8 @@
     },
     "files": [
       "dist/**/*",
-      "src/**/*",
-      "assets/**/*",
-      "main.js",
+      "main/**/*",
+      "renderer/out/**/*",
       "package.json"
     ],
     "publish": [
@@ -44,31 +56,39 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "shortcutName": "BLCKBOLT Browser",
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico",
+      "installerIcon": "main/assets/icon.ico",
+      "uninstallerIcon": "main/assets/icon.ico",
+      "installerHeaderIcon": "main/assets/icon.ico",
       "displayLanguageSelector": false,
-      "license": "LICENSE.txt",
-      "include": "build/installer.nsh"
+      "license": "LICENSE.txt"
     },
     "protocols": [
       {
         "name": "BLCKBOLT Protocol",
-        "schemes": ["blckbolt"]
+        "schemes": [
+          "blckbolt"
+        ]
       }
     ],
     "directories": {
-      "buildResources": "assets"
+      "buildResources": "main/assets"
     },
     "mac": {
       "category": "public.app-category.developer-tools"
     },
     "win": {
-      "target": ["nsis", "portable", "zip"],
-      "icon": "assets/icon.ico"
+      "target": [
+        "nsis",
+        "portable",
+        "zip"
+      ],
+      "icon": "main/assets/icon.ico"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "category": "Development"
     }
   }
