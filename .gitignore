@@ -1,6 +1,10 @@
 node_modules/
+renderer/node_modules/
+.next/
+renderer/.next/
+out/
+renderer/out/
 dist/
-build/
-.env
+renderer/dist/
 *.log
-*.tmp
+verification/
