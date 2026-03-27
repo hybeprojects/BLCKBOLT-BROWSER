@@ -11,7 +11,10 @@
     "lint": "eslint main renderer",
     "typecheck": "cd renderer && tsc --noEmit"
   },
-  "author": "hybeprojects",
+  "author": {
+    "name": "hybeprojects",
+    "email": "contact@hybe.pro"
+  },
   "license": "MIT",
   "dependencies": {
     "next": "14.2.3",
@@ -89,7 +92,8 @@
         "AppImage",
         "deb"
       ],
-      "category": "Development"
+      "category": "Development",
+      "maintainer": "hybeprojects <contact@hybe.pro>"
     }
   }
 }
