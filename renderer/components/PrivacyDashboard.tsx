@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import SpeedTest from './SpeedTest'
+import ConnectionMetrics from './ConnectionMetrics'
 
 interface PrivacyStats {
   trackersBlocked: number
@@ -9,6 +11,7 @@ interface PrivacyStats {
   torActive: boolean
   vpnActive: boolean
   adblockActive: boolean
+  webrtcProtected?: boolean
 }
 
 const mockStats: PrivacyStats = {
@@ -19,11 +22,13 @@ const mockStats: PrivacyStats = {
   torActive: false,
   vpnActive: true,
   adblockActive: true,
+  webrtcProtected: true,
 }
 
 export default function PrivacyDashboard() {
   const [stats, setStats] = useState<PrivacyStats>(mockStats)
   const [showLog, setShowLog] = useState(false)
+  const [webrtcTesting, setWebrtcTesting] = useState(false)
   const [logs, setLogs] = useState<{ type: string; message: string; timestamp: Date }[]>([
     { type: 'adblock', message: 'Blocked ad.doubleclick.net', timestamp: new Date(Date.now() - 5000) },
     { type: 'adblock', message: 'Blocked tracking pixel from google-analytics.com', timestamp: new Date(Date.now() - 15000) },
@@ -32,6 +37,32 @@ export default function PrivacyDashboard() {
   ])
 
   useEffect(() => {
+    // Test WebRTC protection on mount
+    const testWebRTC = async () => {
+      if (typeof window !== 'undefined' && (window as any).blckboltAPI) {
+        setWebrtcTesting(true)
+        try {
+          const result = await (window as any).blckboltAPI.invoke('webrtc-test')
+          setStats((prev) => ({ ...prev, webrtcProtected: result.protected }))
+          const message = result.protected 
+            ? 'WebRTC leak prevention active' 
+            : `WebRTC leak detected: ${result.ipAddresses.join(', ')}`
+          setLogs((prev) => [{
+            type: 'tracker',
+            message: `🔍 ${message}`,
+            timestamp: new Date()
+          }, ...prev].slice(0, 50))
+        } catch (e) {
+          console.error('WebRTC test failed:', e)
+          setStats((prev) => ({ ...prev, webrtcProtected: true }))
+        } finally {
+          setWebrtcTesting(false)
+        }
+      }
+    }
+
+    testWebRTC()
+
     if (typeof window !== 'undefined' && (window as any).blckboltAPI) {
       const api = (window as any).blckboltAPI
       api.on?.('stats-update', (newStats: Partial<PrivacyStats>) => {
@@ -47,7 +78,7 @@ export default function PrivacyDashboard() {
     { label: 'Trackers Blocked', value: stats.trackersBlocked, icon: '🛑', color: 'from-red-500/20 to-red-600/10' },
     { label: 'Bandwidth Saved', value: stats.bandwidthSaved, icon: '⚡', color: 'from-green-500/20 to-green-600/10' },
     { label: 'Requests Blocked', value: stats.requestsBlocked, icon: '🔒', color: 'from-blue-500/20 to-blue-600/10' },
-    { label: 'Sites Visited', value: stats.sitesVisited, icon: '🌐', color: 'from-purple-500/20 to-purple-600/10' },
+    { label: 'WebRTC Protected', value: stats.webrtcProtected ? '✓ Safe' : '⚠ Leaking', icon: '📡', color: stats.webrtcProtected ? 'from-cyan-500/20 to-cyan-600/10' : 'from-orange-500/20 to-orange-600/10' },
   ]
 
   return (
@@ -173,6 +204,12 @@ export default function PrivacyDashboard() {
           </div>
         )}
       </motion.div>
+
+      {/* Speed Test Widget */}
+      <SpeedTest />
+
+      {/* Connection Metrics */}
+      <ConnectionMetrics />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

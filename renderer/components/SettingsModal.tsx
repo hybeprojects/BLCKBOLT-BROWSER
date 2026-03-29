@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from './ThemeProvider'
 
@@ -12,6 +12,7 @@ interface SettingsTab {
 const tabs: SettingsTab[] = [
   { id: 'general', label: 'General', icon: '⚙️' },
   { id: 'privacy', label: 'Privacy', icon: '🔐' },
+  { id: 'dns', label: 'DNS', icon: '🌐' },
   { id: 'appearance', label: 'Appearance', icon: '🎨' },
   { id: 'shortcuts', label: 'Keyboard', icon: '⌨️' },
   { id: 'about', label: 'About', icon: 'ℹ️' },
@@ -22,9 +23,21 @@ interface SettingsModalProps {
   onClose: () => void
 }
 
+interface DnsResolver {
+  id: string
+  name: string
+  doh: string
+  dot: string
+  privacy: string
+}
+
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState('general')
   const { theme, setTheme } = useTheme()
+  const [resolvers, setResolvers] = useState<DnsResolver[]>([])
+  const [currentResolver, setCurrentResolver] = useState<any>(null)
+  const [testingResolver, setTestingResolver] = useState<string | null>(null)
+  const [testResults, setTestResults] = useState<Record<string, any>>({})
   const [settings, setSettings] = useState({
     autoUpdate: true,
     blockThirdPartyCookies: true,
@@ -32,6 +45,59 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     defaultSearchEngine: 'duckduckgo',
     homePage: 'about:blank',
   })
+
+  // Load DoH/DoT resolvers on mount
+  useEffect(() => {
+    const loadResolvers = async () => {
+      if (typeof window !== 'undefined' && (window as any).blckboltAPI) {
+        try {
+          const [resolversList, current] = await Promise.all([
+            (window as any).blckboltAPI.invoke('doh-get-resolvers'),
+            (window as any).blckboltAPI.invoke('doh-get-current'),
+          ])
+          setResolvers(resolversList)
+          setCurrentResolver(current)
+        } catch (e) {
+          console.error('Failed to load DNS resolvers:', e)
+        }
+      }
+    }
+    if (isOpen) {
+      loadResolvers()
+    }
+  }, [isOpen])
+
+  const handleSetResolver = async (resolverId: string) => {
+    if (typeof window !== 'undefined' && (window as any).blckboltAPI) {
+      try {
+        const result = await (window as any).blckboltAPI.invoke('doh-set-resolver', {
+          resolverId,
+          dohEnabled: true,
+          dotEnabled: false,
+        })
+        setCurrentResolver(result)
+      } catch (e) {
+        console.error('Failed to set resolver:', e)
+      }
+    }
+  }
+
+  const handleTestResolver = async (resolverId: string) => {
+    setTestingResolver(resolverId)
+    if (typeof window !== 'undefined' && (window as any).blckboltAPI) {
+      try {
+        const result = await (window as any).blckboltAPI.invoke('doh-test-resolver', resolverId)
+        setTestResults((prev) => ({ ...prev, [resolverId]: result }))
+      } catch (e) {
+        setTestResults((prev) => ({
+          ...prev,
+          [resolverId]: { success: false, error: e.message },
+        }))
+      } finally {
+        setTestingResolver(null)
+      }
+    }
+  }
 
   if (!isOpen) return null
 
@@ -238,6 +304,64 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                           >
                             {settings[item.key as keyof typeof settings] ? '✓' : '○'}
                           </button>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeTab === 'dns' && (
+                  <motion.div
+                    key="dns"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-4"
+                  >
+                    <h3 className="text-xl font-semibold text-slate-100">DNS over HTTPS/TLS</h3>
+                    <p className="text-sm text-slate-400 mb-4">
+                      Encrypted DNS prevents your ISP from seeing which websites you visit.
+                    </p>
+                    <div className="space-y-3">
+                      {resolvers.map((resolver) => (
+                        <div
+                          key={resolver.id}
+                          className={`rounded-2xl border-2 p-4 transition cursor-pointer ${
+                            currentResolver?.id === resolver.id
+                              ? 'border-accent bg-accent/10'
+                              : 'border-white/10 hover:border-white/20'
+                          }`}
+                          onClick={() => handleSetResolver(resolver.id)}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <p className="font-medium text-slate-100">{resolver.name}</p>
+                              <p className="text-xs text-slate-400 mt-1">{resolver.privacy}</p>
+                            </div>
+                            {currentResolver?.id === resolver.id && <span className="text-lg">✓</span>}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleTestResolver(resolver.id)
+                            }}
+                            disabled={testingResolver === resolver.id}
+                            className="mt-3 text-xs px-3 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition disabled:opacity-50"
+                          >
+                            {testingResolver === resolver.id ? 'Testing...' : 'Test Connection'}
+                          </button>
+                          {testResults[resolver.id] && (
+                            <p className={`mt-2 text-xs ${
+                              testResults[resolver.id].success
+                                ? 'text-green-400'
+                                : 'text-orange-400'
+                            }`}>
+                              {testResults[resolver.id].success
+                                ? `✓ ${testResults[resolver.id].latency}ms`
+                                : `⚠ ${testResults[resolver.id].error}`}
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>

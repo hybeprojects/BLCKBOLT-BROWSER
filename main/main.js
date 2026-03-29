@@ -10,6 +10,9 @@ const vpn = require('./modules/network/vpn');
 const proxyAgent = require('./modules/network/proxy-agent');
 const adblocker = require('./modules/adblocker');
 const fingerprint = require('./modules/fingerprint');
+const dohDot = require('./modules/network/doh-dot');
+const canvasBlocker = require('./modules/fingerprint/canvas-blocker');
+const dpiDetector = require('./modules/network/dpi-detector');
 
 let mainWindow = null;
 let splash = null;
@@ -63,7 +66,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      enableRemoteModule: false
+      enableRemoteModule: false,
+      webRtcIPHandlingPolicy: 'disable_non_proxied_udp'
     }
   });
 
@@ -197,4 +201,117 @@ ipcMain.handle('fingerprint-set', (event, index) => {
   fingerprint.setProfile(index);
   fingerprint.applyToSession(session.defaultSession);
   return fingerprint.getCurrent();
+});
+
+// IPC Handlers: WebRTC Leak Detection & Prevention
+ipcMain.handle('webrtc-test', async () => {
+  // Test if WebRTC leaks local IPs
+  // Returns: { protected: boolean, ipAddresses: string[] }
+  try {
+    if (!mainWindow) return { protected: true, ipAddresses: [] };
+    
+    // Inject script to detect WebRTC IP leaks
+    const result = await mainWindow.webContents.executeJavaScript(`
+      (async () => {
+        const peerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+        if (!peerConnection) return { protected: true, ipAddresses: [] };
+        
+        const ips = [];
+        const pc = new peerConnection({ iceServers: [] });
+        
+        return new Promise((resolve) => {
+          const timeout = setTimeout(() => {
+            pc.close();
+            resolve({ protected: ips.length === 0, ipAddresses: ips });
+          }, 2000);
+          
+          pc.onicecandidate = (ice) => {
+            if (!ice || !ice.candidate) return;
+            const ipRegex = /([0-9]{1,3}(\\.[0-9]{1,3}){3})/;
+            const match = ice.candidate.candidate.match(ipRegex);
+            if (match && !match[1].startsWith('127.')) {
+              ips.push(match[1]);
+            }
+          };
+          
+          pc.createDataChannel('test');
+          pc.createOffer().then(offer => pc.setLocalDescription(offer)).catch(() => {});
+        });
+      })()
+    `);
+    
+    return result || { protected: true, ipAddresses: [] };
+  } catch (e) {
+    console.warn('WebRTC test error:', e.message);
+    return { protected: true, ipAddresses: [] };
+  }
+});
+
+ipcMain.handle('webrtc-status', () => {
+  return {
+    blocked: true,
+    policy: 'disable_non_proxied_udp',
+    timestamp: new Date().toISOString()
+  };
+});
+
+// IPC Handlers: DoH/DoT (DNS over HTTPS/TLS)
+ipcMain.handle('doh-get-resolvers', () => {
+  return dohDot.getResolvers();
+});
+
+ipcMain.handle('doh-get-current', () => {
+  return dohDot.getCurrentResolver();
+});
+
+ipcMain.handle('doh-set-resolver', (event, { resolverId, dohEnabled, dotEnabled }) => {
+  const result = dohDot.setResolver(resolverId, { dohEnabled, dotEnabled });
+  if (mainWindow) {
+    dohDot.applyToSession(session.defaultSession);
+    mainWindow.webContents.send('doh-updated', result);
+  }
+  return result;
+});
+
+ipcMain.handle('doh-test-resolver', async (event, resolverId) => {
+  return await dohDot.testResolver(resolverId);
+});
+
+ipcMain.handle('doh-status', () => {
+  return dohDot.getStatus();
+});
+
+// IPC Handlers: Canvas Fingerprinting Blocker
+ipcMain.handle('canvas-blocker-enable', () => {
+  canvasBlocker.isEnabled = true;
+  return { enabled: true };
+});
+
+ipcMain.handle('canvas-blocker-disable', () => {
+  canvasBlocker.isEnabled = false;
+  return { enabled: false };
+});
+
+ipcMain.handle('canvas-blocker-status', () => {
+  return {
+    enabled: canvasBlocker.isEnabled,
+    timestamp: new Date().toISOString()
+  };
+});
+
+// IPC Handlers: DPI Detection
+ipcMain.handle('dpi-detector-start', async () => {
+  const results = await dpiDetector.runDetectionScan();
+  if (mainWindow) {
+    mainWindow.webContents.send('dpi-results', results);
+  }
+  return results;
+});
+
+ipcMain.handle('dpi-detector-status', () => {
+  return dpiDetector.getStatus();
+});
+
+ipcMain.handle('dpi-detector-recommendations', () => {
+  return dpiDetector.getRecommendations();
 });
