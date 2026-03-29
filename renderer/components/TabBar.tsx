@@ -94,37 +94,57 @@ export default function TabBar() {
     <motion.div
       key={tab.id}
       layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.15 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       draggable
       onDragStart={(e: any) => handleDragStart(e, tab.id)}
       onDragOver={(e: any) => handleDragOver(e, tab.id)}
       onDrop={(e: any) => handleDrop(e, tab.id)}
       onDragEnd={handleDragEnd}
       onDragLeave={() => setDragOverId(null)}
-      className={`relative rounded-2xl transition-all ${
-        dragging === tab.id ? 'opacity-50' : ''
-      } ${dragOverId === tab.id && dragging && dragging !== tab.id ? 'ring-2 ring-accent' : ''}`}
+      className={`group relative min-w-[140px] max-w-[200px] flex-1 cursor-default select-none ${
+        dragging === tab.id ? 'opacity-40' : ''
+      }`}
     >
-      <button
+      <div
         onClick={() => setActiveTab(tab.id)}
-        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-2xl transition-all ${
+        className={`relative flex items-center justify-between h-10 px-4 transition-all duration-300 rounded-xl overflow-hidden border ${
           activeTab === tab.id
-            ? 'bg-accent text-slate-950'
-            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-        }`}
+            ? 'bg-accent/10 border-accent/40 shadow-[0_0_15px_rgba(124,58,237,0.15)]'
+            : 'bg-slate-900/40 border-white/5 hover:bg-slate-800/60 hover:border-white/10'
+        } ${dragOverId === tab.id && dragging && dragging !== tab.id ? 'ring-2 ring-accent' : ''}`}
       >
-        <span className="select-none cursor-move text-xs">⋮⋮</span>
-        {tab.title}
+        {activeTab === tab.id && (
+          <motion.div
+            layoutId="activeTabGlow"
+            className="absolute inset-0 bg-gradient-to-r from-accent/20 to-transparent pointer-events-none"
+          />
+        )}
+
+        <div className="flex items-center gap-2 overflow-hidden z-10">
+          <span className="shrink-0 text-[10px] opacity-30 group-hover:opacity-60 transition-opacity cursor-move">
+            ⋮⋮
+          </span>
+          <span className={`text-sm font-medium truncate ${
+            activeTab === tab.id ? 'text-accentSoft' : 'text-slate-400 group-hover:text-slate-200'
+          }`}>
+            {tab.title}
+          </span>
+        </div>
+
         <button
           onClick={(e) => { e.stopPropagation(); closeTab(tab.id) }}
-          className="ml-1 text-xs opacity-60 hover:opacity-100"
+          className={`shrink-0 ml-2 h-5 w-5 flex items-center justify-center rounded-md transition-all z-10 ${
+            activeTab === tab.id
+              ? 'text-accentSoft hover:bg-accent/20'
+              : 'text-slate-600 hover:text-slate-200 hover:bg-white/5'
+          }`}
         >
-          ✕
+          <span className="text-[10px]">✕</span>
         </button>
-      </button>
+      </div>
     </motion.div>
   )
 
@@ -132,19 +152,24 @@ export default function TabBar() {
   const overflowTabs = tabs.slice(5)
 
   return (
-    <div className="space-y-3">
-      <div className="glass-panel rounded-3xl border border-white/10 p-4 shadow-soft">
+    <div className="space-y-4">
+      <div className="glass-panel rounded-[2rem] border border-white/10 p-3 shadow-soft">
         {/* Tab Search Bar */}
-        <div className="mb-4 flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="Quick search tabs..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 rounded-2xl bg-slate-900 px-4 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-accent focus:ring-2 focus:ring-accent/30"
-          />
-          <button className="rounded-2xl bg-accent px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-accentSoft">
-            + Tab
+        <div className="mb-3 flex items-center gap-3 px-1">
+          <div className="relative flex-1 group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-accent transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search active tabs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-2xl bg-slate-950/50 border border-white/5 pl-10 pr-4 py-2.5 text-xs text-slate-100 outline-none placeholder:text-slate-600 focus:border-accent/40 focus:ring-4 focus:ring-accent/5 transition-all"
+            />
+          </div>
+          <button className="h-10 px-5 rounded-2xl bg-accent text-slate-950 text-xs font-bold uppercase tracking-wider hover:bg-accentSoft active:scale-95 transition-all shadow-lg shadow-accent/20">
+            New Tab
           </button>
           {overflowTabs.length > 0 && (
             <div className="relative">

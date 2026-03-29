@@ -16,14 +16,19 @@ export default function Home() {
   if (showSplash) return <SplashScreen />
 
   return (
-    <div className="page-shell min-h-screen text-slate-100">
-      <div className="max-w-[2000px] mx-auto px-4 py-4 space-y-4">
-        <TabBar />
-        <BrowserHeader />
-        <div className="lg:flex lg:gap-4">
+    <div className="page-shell min-h-screen text-slate-100 overflow-x-hidden">
+      <div className="max-w-[2200px] mx-auto p-4 md:p-6 space-y-6">
+        <div className="space-y-4">
+          <TabBar />
+          <BrowserHeader />
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6">
           <SidePanel />
-          <main className="flex-1 rounded-3xl glass-panel overflow-hidden browser-card border border-white/10">
+          <main className="flex-1 min-w-0 rounded-[2.5rem] glass-panel overflow-hidden browser-card border border-white/10 shadow-2xl relative">
             <WebView />
+            {/* Subtle glow for the main container */}
+            <div className="absolute inset-0 pointer-events-none ring-1 ring-white/5 rounded-[2.5rem]" />
           </main>
         </div>
       </div>

@@ -117,11 +117,21 @@ app.on('open-url', (event, url) => {
 });
 
 app.on('activate', function () {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  } else {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  }
 });
 
 app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit();
+  // Keep the app running in the background even when all windows are closed
+  // This matches modern privacy tools/browsers that stay ready for quick launch
+  console.log('All windows closed, app staying active in background');
 });
 
 // Wire up updater
