@@ -48,10 +48,10 @@
       "buildResources": "main/assets"
     },
     "files": [
-      "dist/**/*",
       "main/**/*",
       "renderer/out/**/*",
-      "package.json"
+      "package.json",
+      "!dist"
     ],
     "extraMetadata": {
       "main": "main/main.js"

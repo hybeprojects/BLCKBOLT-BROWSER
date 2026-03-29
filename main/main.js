@@ -1,5 +1,5 @@
 // Main Electron process for BLCKBOLT-BROWSER
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, ipcMain, session, Menu, Tray } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -16,6 +16,7 @@ const dpiDetector = require('./modules/network/dpi-detector');
 
 let mainWindow = null;
 let splash = null;
+let tray = null;
 
 const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_START_URL;
 
@@ -89,6 +90,82 @@ function createWindow() {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+
+  // Header & SSL Interception
+  session.defaultSession.webRequest.onCompleted((details) => {
+    if (mainWindow && details.resourceType === 'mainFrame') {
+      mainWindow.webContents.send('header-data', {
+        url: details.url,
+        method: details.method,
+        statusCode: details.statusCode,
+        responseHeaders: details.responseHeaders,
+        ip: details.ip
+      });
+    }
+  });
+
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    if (mainWindow && details.resourceType === 'mainFrame') {
+      mainWindow.webContents.send('header-data', {
+        requestHeaders: details.requestHeaders
+      });
+    }
+    callback({ cancel: false });
+  });
+
+  // SSL Info via certificate-error (for verification) and potentially other means
+  // In a real browser we might use more advanced APIs, but for now we'll capture cert errors at least
+  app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
+    if (mainWindow) {
+      mainWindow.webContents.send('ssl-data', {
+        issuerName: certificate.issuerName,
+        subjectName: certificate.subjectName,
+        validExpiry: certificate.validTo,
+        protocol: certificate.protocol,
+        fingerprint: certificate.fingerprint,
+        error: error
+      });
+    }
+    callback(false);
+  });
+}
+
+function createTray() {
+  const iconPath = path.join(__dirname, 'assets', 'icon.png');
+  if (!fs.existsSync(iconPath)) return;
+
+  tray = new Tray(iconPath);
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show BLCKBOLT',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+        } else {
+          createWindow();
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        app.isQuitting = true;
+        app.quit();
+      }
+    }
+  ]);
+
+  tray.setToolTip('BLCKBOLT Browser');
+  tray.setContextMenu(contextMenu);
+
+  tray.on('double-click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+    } else {
+      createWindow();
+    }
+  });
 }
 
 // Single instance handling
@@ -108,6 +185,7 @@ if (!gotLock) {
 
 app.on('ready', () => {
   createWindow();
+  createTray();
   try { app.setAsDefaultProtocolClient('blckbolt'); } catch (e) { }
 });
 
@@ -132,6 +210,10 @@ app.on('window-all-closed', function () {
   // Keep the app running in the background even when all windows are closed
   // This matches modern privacy tools/browsers that stay ready for quick launch
   console.log('All windows closed, app staying active in background');
+});
+
+app.on('before-quit', () => {
+  app.isQuitting = true;
 });
 
 // Wire up updater
@@ -244,7 +326,7 @@ ipcMain.handle('webrtc-test', async () => {
           
           pc.onicecandidate = (ice) => {
             if (!ice || !ice.candidate) return;
-            const ipRegex = /([0-9]{1,3}(\\.[0-9]{1,3}){3})/;
+            const ipRegex = /([0-9]{1,3}(\\\\.[0-9]{1,3}){3})/;
             const match = ice.candidate.candidate.match(ipRegex);
             if (match && !match[1].startsWith('127.')) {
               ips.push(match[1]);
