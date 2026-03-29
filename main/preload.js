@@ -63,13 +63,13 @@ document.documentElement.insertBefore(script, document.documentElement.firstChil
 contextBridge.exposeInMainWorld('blckboltAPI', {
   send: (channel, data) => {
     // Only allow specific channels for security
-    const validChannels = ['vpn-connect', 'vpn-disconnect'];
+    const validChannels = ['vpn-connect', 'vpn-disconnect', 'navigate'];
     if (validChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
     }
   },
   on: (channel, func) => {
-    const validChannels = ['vpn-status', 'vpn-log', 'protocol-url'];
+    const validChannels = ['vpn-status', 'vpn-log', 'protocol-url', 'navigate'];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }

@@ -158,76 +158,76 @@ export default function TabBar() {
                 {showOverflow && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: -4 }}
-+                    animate={{ opacity: 1, scale: 1, y: 0 }}
-+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
-+                    className="absolute right-0 top-full mt-2 w-48 rounded-2xl bg-slate-900 border border-white/10 shadow-lg overflow-hidden z-50"
-+                  >
-+                    <div className="max-h-64 overflow-y-auto">
-+                      {overflowTabs.map((t) => (
-+                        <button
-+                          key={t.id}
-+                          onClick={() => { setActiveTab(t.id); setShowOverflow(false) }}
-+                          className="block w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 transition"
-+                        >
-+                          {t.title}
-+                        </button>
-+                      ))}
-+                    </div>
-+                  </motion.div>
-+                )}
-+              </AnimatePresence>
-+            </div>
-+          )}
-+        </div>
-+
-+        {/* Tab List */}
-+        <div
-+          ref={scrollRef}
-+          className="flex flex-wrap gap-2 overflow-x-auto pb-2"
-+          role="tablist"
-+          aria-label="Open tabs"
-+        >
-+          <AnimatePresence mode="popLayout">
-+            {(searchQuery ? filtered : visibleTabs).map((tab) => (
-+              <TabButton key={tab.id} tab={tab} isSearch={!!searchQuery} />
-+            ))}
-+          </AnimatePresence>
-+        </div>
-+      </div>
-+
-+      {/* Tab Groups */}
-+      <AnimatePresence>
-+        {Object.entries(groupedTabs.groups).map(([groupName, groupTabs]) => (
-+          <motion.div key={groupName} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
-+            <button
-+              onClick={() => toggleGroup(groupName)}
-+              className="flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-[0.25em] font-semibold text-slate-400 hover:text-slate-300 transition"
-+            >
-+              <span>{expandedGroups.has(groupName) ? '▼' : '▶'}</span>
-+              {groupName}
-+              <span className="text-slate-600 text-[11px]">({groupTabs.length})</span>
-+            </button>
-+            <motion.div
-+              initial={false}
-+              animate={{ height: expandedGroups.has(groupName) ? 'auto' : 0, opacity: expandedGroups.has(groupName) ? 1 : 0 }}
-+              transition={{ duration: 0.2 }}
-+              className="overflow-hidden"
-+            >
-+              {expandedGroups.has(groupName) && (
-+                <div className="glass-panel rounded-2xl border border-white/10 p-3 shadow-soft">
-+                  <div className="flex flex-wrap gap-2">
-+                    <AnimatePresence mode="popLayout">
-+                      {groupTabs.map((tab) => (
-+                        <TabButton key={tab.id} tab={tab} />
-+                      ))}
-+                    </AnimatePresence>
-+                  </div>
-+                </div>
-+              )}
-+            </motion.div>
-+          </motion.div>
-+        ))}
-+      </AnimatePresence>
-+    </div>
-+  )
-+}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    className="absolute right-0 top-full mt-2 w-48 rounded-2xl bg-slate-900 border border-white/10 shadow-lg overflow-hidden z-50"
+                  >
+                    <div className="max-h-64 overflow-y-auto">
+                      {overflowTabs.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => { setActiveTab(t.id); setShowOverflow(false) }}
+                          className="block w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 transition"
+                        >
+                          {t.title}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+
+        {/* Tab List */}
+        <div
+          ref={scrollRef}
+          className="flex flex-wrap gap-2 overflow-x-auto pb-2"
+          role="tablist"
+          aria-label="Open tabs"
+        >
+          <AnimatePresence mode="popLayout">
+            {(searchQuery ? filtered : visibleTabs).map((tab) => (
+              <TabButton key={tab.id} tab={tab} isSearch={!!searchQuery} />
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Tab Groups */}
+      <AnimatePresence>
+        {Object.entries(groupedTabs.groups).map(([groupName, groupTabs]) => (
+          <motion.div key={groupName} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+            <button
+              onClick={() => toggleGroup(groupName)}
+              className="flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-[0.25em] font-semibold text-slate-400 hover:text-slate-300 transition"
+            >
+              <span>{expandedGroups.has(groupName) ? '▼' : '▶'}</span>
+              {groupName}
+              <span className="text-slate-600 text-[11px]">({groupTabs.length})</span>
+            </button>
+            <motion.div
+              initial={false}
+              animate={{ height: expandedGroups.has(groupName) ? 'auto' : 0, opacity: expandedGroups.has(groupName) ? 1 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              {expandedGroups.has(groupName) && (
+                <div className="glass-panel rounded-2xl border border-white/10 p-3 shadow-soft">
+                  <div className="flex flex-wrap gap-2">
+                    <AnimatePresence mode="popLayout">
+                      {groupTabs.map((tab) => (
+                        <TabButton key={tab.id} tab={tab} />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  )
+}
