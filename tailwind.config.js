@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const tokens = require('./renderer/design-tokens.json')
+
 module.exports = {
   darkMode: 'class',
   content: [
@@ -8,24 +10,37 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#0b0d12',
-        surface: '#111827',
-        surface2: '#161b2a',
+        background: tokens.colors.background,
+        surface: tokens.colors.surface,
+        surface2: tokens.colors.surfaceSoft,
         panel: '#1f2937',
-        accent: '#7c3aed',
-        accentSoft: '#8b5cf6',
-        glow: '#38bdf8',
-        success: '#22c55e',
-        warning: '#f59e0b',
-        error: '#ef4444',
-        bgDark: '#05070d',
+        accent: tokens.colors.accent,
+        accentSoft: tokens.colors.accentSoft,
+        glow: tokens.colors.glow,
+        success: tokens.colors.success,
+        warning: tokens.colors.warning,
+        error: tokens.colors.error,
+        bgDark: tokens.colors.background,
+      },
+      spacing: {
+        xs: tokens.spacing.xs,
+        sm: tokens.spacing.sm,
+        md: tokens.spacing.md,
+        lg: tokens.spacing.lg,
+        xl: tokens.spacing.xl,
+      },
+      borderRadius: {
+        sm: tokens.radius.sm,
+        md: tokens.radius.md,
+        lg: tokens.radius.lg,
+        pill: tokens.radius.pill,
       },
       fontFamily: {
         orbitron: ['Orbitron', 'sans-serif'],
         inter: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        soft: '0 20px 80px rgba(15, 23, 42, 0.35)',
+        soft: tokens.elevation.shadowSoft,
       },
       backgroundImage: {
         'hero-glow': 'radial-gradient(circle at top left, rgba(124,58,237,0.22), transparent 30%), radial-gradient(circle at bottom right, rgba(56,189,248,0.15), transparent 25%)',
