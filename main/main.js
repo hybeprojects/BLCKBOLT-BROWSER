@@ -67,7 +67,8 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      webRtcIPHandlingPolicy: 'disable_non_proxied_udp'
+      webRtcIPHandlingPolicy: 'disable_non_proxied_udp',
+      webviewTag: true
     }
   });
 
@@ -165,6 +166,12 @@ ipcMain.on('vpn-connect', (event, opts = {}) => {
 ipcMain.on('vpn-disconnect', (event) => {
   vpn.disconnect();
   proxyAgent.clearProxy(session.defaultSession);
+});
+
+ipcMain.on('navigate', (event, { url }) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('navigate', url);
+  }
 });
 
 vpn.on('log', (msg) => { if (mainWindow) mainWindow.webContents.send('vpn-log', msg); });

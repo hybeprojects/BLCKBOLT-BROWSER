@@ -10,6 +10,11 @@ export default function WebView() {
           ref.current.src = url
         }
       })
+      window.blckboltAPI.on('navigate', (url: string) => {
+        if (ref.current) {
+          ref.current.src = url
+        }
+      })
     }
   }, [])
 

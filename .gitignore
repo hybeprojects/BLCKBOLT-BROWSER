@@ -8,3 +8,4 @@ dist/
 renderer/dist/
 *.log
 verification/
+*.tsbuildinfo
