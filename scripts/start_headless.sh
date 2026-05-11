@@ -1,36 +1,43 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Helper to run BLCKBOLT Browser headless inside Xvfb + dbus-run-session
-# Usage:
-#   scripts/start_headless.sh [build-and-start|build|start]
-# Default: build-and-start
+echo "=== Starting BLCKBOLT Browser in Headless Mode ==="
 
-MODE=${1:-build-and-start}
+# Prefer dbus-run-session (safer), fall back to dbus-launch when unavailable
+DBUS_PREFIX=""
+if command -v dbus-run-session >/dev/null 2>&1; then
+  DBUS_PREFIX="dbus-run-session --"
+elif command -v dbus-launch >/dev/null 2>&1; then
+  # dbus-launch will export a session bus for child processes
+  eval "$(dbus-launch --sh-syntax --exit-with-session)"
+else
+  echo "Warning: neither dbus-run-session nor dbus-launch found; some features may log warnings."
+fi
 
-XVFB_ARGS=(--auto-servernum --server-args="-screen 0 1280x720x24 -nolisten tcp")
+# Start a virtual X server if one is not present
+if [ -z "${DISPLAY:-}" ] || ! xdpyinfo >/dev/null 2>&1; then
+  echo "Starting Xvfb on :99"
+  Xvfb :99 -screen 0 1280x720x24 -nolisten tcp > /dev/null 2>&1 &
+  XVFB_PID=$!
+  trap 'kill -TERM "$XVFB_PID" 2>/dev/null || true' EXIT
+  export DISPLAY=:99
+  sleep 1
+fi
 
-run_x() {
-  local cmd="$*"
-  dbus-run-session -- xvfb-run "${XVFB_ARGS[@]}" bash -lc "$cmd"
-}
+# Environment tweaks
+export ELECTRON_DISABLE_SANDBOX=true
+export LIBGL_ALWAYS_SOFTWARE=1
+export ELECTRON_ENABLE_LOGGING=true
 
-case "$MODE" in
-  start)
-    echo "Starting Electron (headless)..."
-    run_x "npm start"
-    ;;
-  build)
-    echo "Building renderer..."
-    run_x "npm run build:renderer"
-    ;;
-  build-and-start|default)
-    echo "Building renderer and starting Electron (headless)..."
-    run_x "npm run build:renderer && npm start"
-    ;;
-  *)
-    echo "Unknown mode: $MODE"
-    echo "Usage: $0 [build-and-start|build|start]"
-    exit 1
-    ;;
-esac
+echo "Building renderer..."
+npm run build:renderer
+
+echo "Starting Electron (headless)..."
+# Run electron under dbus session and Xvfb. Avoid unstable/process-oriented flags.
+cmd="npx electron . --no-sandbox --disable-gpu --disable-dev-shm-usage --disable-setuid-sandbox"
+if [ -n "$DBUS_PREFIX" ]; then
+  eval "$DBUS_PREFIX $cmd"
+else
+  eval "$cmd"
+fi
+
